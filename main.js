@@ -9621,7 +9621,9 @@
   });
   var { hostname, protocol } = window.location;
   var clientId = "30b34f37fc0d401dbd999d6525a9fff4";
-  var redirectUri = hostname === "tsegarra.github.io" ? "https://tsegarra.github.io/spotify-top-albums" : "http://localhost:8081";
+  var isLive = hostname === "tsegarra.github.io";
+  var redirectUri = isLive ? "https://tsegarra.github.io/spotify-top-albums" : "http://localhost:8081";
+  var rootUri = isLive ? "/spotify-top-albums" : "/";
   var urlParams = new URLSearchParams(window.location.search);
   var code = urlParams.get("code");
   async function getToken(code1, codeVerifier) {
@@ -9710,12 +9712,12 @@
     if (refreshToken) {
       console.log("token is expired and refreshtoken");
       refreshUsingRefreshToken(refreshToken).then(() => {
-        window.location.href = "/";
+        window.location.href = rootUri;
       });
     } else if (code && codeVerifierFromLocalStorage) {
       console.log("no token or token expired and we have a code");
       getToken(code, codeVerifierFromLocalStorage).then(() => {
-        window.location.href = "/";
+        window.location.href = rootUri;
       });
     } else {
       const codeVerifier = generateRandomString();
