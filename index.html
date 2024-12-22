@@ -17,11 +17,17 @@
     body {
       font-family: sans-serif;
       background-color: #f675c2;
-      margin: 1rem 2rem;
       display: flex;
       justify-content: center;
       flex-flow: column;
       align-items: center;
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 1rem 2rem;
+    }
+
+    a {
+      color: #006400 !important;
     }
 
     /* General reset for fieldset */
@@ -118,6 +124,8 @@
     span.album-number {
       font-size: 1.25rem;
       font-weight: bold;
+      min-width: 1.5rem;
+      text-align: center;
     }
 
     span.artist-name {
@@ -155,7 +163,9 @@
 </head>
 <body>
   <div class="pre-upload">
-    <h2>Upload your streaming history .zip file</h2>
+    <h2>Your Top Albums</h2>
+    <p>You can request your extended streaming history in Spotify's <a href="https://www.spotify.com/us/account/privacy/">privacy settings</a>.</p>
+    <p>Upload that .zip file below to view your top albums.</p>
     <input type="file" id="file-input" />
   </div>
 
@@ -168,7 +178,7 @@
   </div>
 
   <div class="post-upload">
-    <h2>My Top Albums</h2>
+    <h2>Your Top Albums</h2>
   </div>
 
   <div class="post-upload" id="album-list"></div>

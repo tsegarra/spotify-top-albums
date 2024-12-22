@@ -9402,6 +9402,14 @@
     getNumPlays() {
       return this.numPlays;
     }
+    getNumPlaysOfNthMostPlayedSong(n) {
+      const playCounts = Object.values(this.playCountBySongTitle);
+      if (n <= 0 || n > playCounts.length) {
+        return 0;
+      }
+      const sortedCounts = playCounts.sort((a, b) => b - a);
+      return sortedCounts[n - 1];
+    }
     getNumDistinctSongsPlayed() {
       return Object.keys(this.playCountBySongTitle).length;
     }
@@ -9509,7 +9517,7 @@
     fragment.appendChild(label);
     return fragment;
   }
-  function getTopNAlbumsAsString(filteredPlays, n) {
+  function getTopNAlbumsForDisplay(filteredPlays, n) {
     const albumCollection = new AlbumCollection();
     filteredPlays.forEach((p) => {
       albumCollection.addPlay(p);
@@ -9517,7 +9525,7 @@
     const filteredAlbums = albumCollection.getAlbums().filter(
       (a) => a.getNumDistinctSongsPlayed() > 5
     );
-    const promises = filteredAlbums.sort((a, b) => b.getNumPlays() - a.getNumPlays()).slice(0, n).map(async (a) => {
+    const promises = filteredAlbums.sort((a, b) => b.getNumPlaysOfNthMostPlayedSong(5) - a.getNumPlaysOfNthMostPlayedSong(5)).slice(0, n).map(async (a) => {
       const arbitraryTrackId = a.getArbitraryTrackId();
       let imageUrl;
       if (arbitraryTrackId) {
@@ -9576,7 +9584,7 @@
   }
   function drawTopAlbumsBetween(plays, startTimeInclusive, endTimeExclusive) {
     const filteredPlays = getPlaysBetween(plays, startTimeInclusive, endTimeExclusive);
-    getTopNAlbumsAsString(filteredPlays, 5).then((topNAlbums) => drawAlbumsToUi(topNAlbums));
+    getTopNAlbumsForDisplay(filteredPlays, 10).then((topNAlbums) => drawAlbumsToUi(topNAlbums));
   }
   function selectAllYears(plays, firstYearInclusive, lastYearInclusive) {
     const startTimeInclusive = new Date(firstYearInclusive, 0, 1);
