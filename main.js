@@ -9619,8 +9619,9 @@
       await zipReader.close();
     }
   });
+  var { hostname, protocol } = window.location;
   var clientId = "30b34f37fc0d401dbd999d6525a9fff4";
-  var redirectUri = "http://localhost:8081";
+  var redirectUri = hostname === "tsegarra.github.io" ? "https://tsegarra.github.io/spotify-top-albums" : "http://localhost:8081";
   var urlParams = new URLSearchParams(window.location.search);
   var code = urlParams.get("code");
   async function getToken(code1, codeVerifier) {
