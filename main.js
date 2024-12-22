@@ -124,23 +124,23 @@
         }
       }
     }
-    function bi_reverse(code, len) {
+    function bi_reverse(code2, len) {
       let res = 0;
       do {
-        res |= code & 1;
-        code >>>= 1;
+        res |= code2 & 1;
+        code2 >>>= 1;
         res <<= 1;
       } while (--len > 0);
       return res >>> 1;
     }
     function gen_codes(tree, max_code, bl_count) {
       const next_code = [];
-      let code = 0;
+      let code2 = 0;
       let bits;
       let n;
       let len;
       for (bits = 1; bits <= MAX_BITS; bits++) {
-        next_code[bits] = code = code + bl_count[bits - 1] << 1;
+        next_code[bits] = code2 = code2 + bl_count[bits - 1] << 1;
       }
       for (n = 0; n <= max_code; n++) {
         len = tree[n * 2 + 1];
@@ -933,7 +933,7 @@
       let dist;
       let lc;
       let lx = 0;
-      let code;
+      let code2;
       let extra;
       if (last_lit !== 0) {
         do {
@@ -943,19 +943,19 @@
           if (dist === 0) {
             send_code(lc, ltree);
           } else {
-            code = Tree._length_code[lc];
-            send_code(code + LITERALS + 1, ltree);
-            extra = Tree.extra_lbits[code];
+            code2 = Tree._length_code[lc];
+            send_code(code2 + LITERALS + 1, ltree);
+            extra = Tree.extra_lbits[code2];
             if (extra !== 0) {
-              lc -= Tree.base_length[code];
+              lc -= Tree.base_length[code2];
               send_bits(lc, extra);
             }
             dist--;
-            code = Tree.d_code(dist);
-            send_code(code, dtree);
-            extra = Tree.extra_dbits[code];
+            code2 = Tree.d_code(dist);
+            send_code(code2, dtree);
+            extra = Tree.extra_dbits[code2];
             if (extra !== 0) {
-              dist -= Tree.base_dist[code];
+              dist -= Tree.base_dist[code2];
               send_bits(dist, extra);
             }
           }
@@ -8271,9 +8271,9 @@
     const { reader, writer, resolveResult, rejectResult, onTaskFinished } = workerData;
     try {
       if (error) {
-        const { message, stack, code, name } = error;
+        const { message, stack, code: code2, name } = error;
         const responseError = new Error(message);
-        Object.assign(responseError, { stack, code, name });
+        Object.assign(responseError, { stack, code: code2, name });
         close(responseError);
       } else {
         if (type == MESSAGE_PULL) {
@@ -9430,6 +9430,19 @@
   var postUploadElements = document.getElementsByClassName("post-upload");
   var preUploadElements = document.getElementsByClassName("pre-upload");
   var yearSelectorElement = document.getElementById("year-selector");
+  function generateRandomString() {
+    const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const values = crypto.getRandomValues(new Uint8Array(64));
+    return values.reduce((acc, x) => acc + possible[x % possible.length], "");
+  }
+  async function sha256(plain) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(plain);
+    return window.crypto.subtle.digest("SHA-256", data);
+  }
+  function base64encode(input) {
+    return btoa(String.fromCharCode(...new Uint8Array(input))).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  }
   function createYearRadioButtons(startDate, endDate, initialYear) {
     const startYear = startDate.getFullYear();
     const endYear = endDate.getFullYear();
@@ -9531,6 +9544,10 @@
             }
           }
         }
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          window.location.href = "/";
+        }
         const firstDate = plays[0].ts;
         const lastDate = plays[plays.length - 1].ts;
         createYearRadioButtons(firstDate, lastDate, lastDate.getFullYear());
@@ -9547,4 +9564,67 @@
       await zipReader.close();
     }
   });
+  var clientId = "30b34f37fc0d401dbd999d6525a9fff4";
+  var redirectUri = "http://localhost:8081";
+  var urlParams = new URLSearchParams(window.location.search);
+  var code = urlParams.get("code");
+  async function getToken(code1) {
+    const codeVerifierFromLocalStorage = localStorage.getItem("code_verifier");
+    if (codeVerifierFromLocalStorage) {
+      const payload = {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams({
+          client_id: clientId,
+          grant_type: "authorization_code",
+          code: code1,
+          redirect_uri: redirectUri,
+          code_verifier: codeVerifierFromLocalStorage
+        })
+      };
+      const body = await fetch("https://accounts.spotify.com/api/token", payload);
+      const response = await body.json();
+      localStorage.setItem("access_token", response.access_token);
+    } else {
+      window.location.href = "/";
+    }
+  }
+  if (code) {
+    getToken(code).then(() => {
+      const token = localStorage.getItem("access_token");
+      async function getTrack(trackId) {
+        const payload = {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Authorization": `Bearer ${token}`
+          }
+        };
+        const body = await fetch("https://api.spotify.com/v1/tracks/" + trackId, payload);
+        const response = await body.json();
+        console.log(response.album.images[0].url);
+      }
+      getTrack("00MYbj8WKfcv3Bz6qFhJKn");
+    });
+  } else {
+    const codeVerifier = generateRandomString();
+    sha256(codeVerifier).then((d) => {
+      const codeChallenge = base64encode(d);
+      const scope = "user-read-private user-read-email";
+      const authUrl = new URL("https://accounts.spotify.com/authorize");
+      window.localStorage.setItem("code_verifier", codeVerifier);
+      const params = {
+        response_type: "code",
+        client_id: clientId,
+        scope,
+        code_challenge_method: "S256",
+        code_challenge: codeChallenge,
+        redirect_uri: redirectUri
+      };
+      authUrl.search = new URLSearchParams(params).toString();
+      window.location.href = authUrl.toString();
+    });
+  }
 })();
