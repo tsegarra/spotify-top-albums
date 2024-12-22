@@ -9443,7 +9443,10 @@
   function base64encode(input) {
     return btoa(String.fromCharCode(...new Uint8Array(input))).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
   }
-  function createYearRadioButtons(startDate, endDate, initialYear) {
+  function createYearRadioButtons(plays) {
+    const startDate = plays[0].ts;
+    const endDate = plays[plays.length - 1].ts;
+    const initialYear = endDate.getFullYear();
     const startYear = startDate.getFullYear();
     const endYear = endDate.getFullYear();
     const fragment = document.createDocumentFragment();
@@ -9452,6 +9455,7 @@
       "0",
       false,
       (e2) => selectAllYears(
+        plays,
         startDate.getFullYear(),
         endDate.getFullYear()
       )
@@ -9462,7 +9466,7 @@
         year.toString(),
         year.toString(),
         initialYear === year,
-        (e2) => selectYear(parseInt(e2.target.value))
+        (e2) => selectYear(plays, parseInt(e2.target.value))
       );
       fragment.appendChild(radioButton);
     }
@@ -9507,28 +9511,29 @@
       console.error('No element with class "display" found.');
     }
   }
-  var plays = [];
-  function getPlaysBetween(startTimeInclusive, endTimeExclusive) {
+  function getPlaysBetween(plays, startTimeInclusive, endTimeExclusive) {
     return plays.filter(
       (p) => p.ts >= startTimeInclusive && p.ts < endTimeExclusive
     );
   }
-  function drawTopAlbumsBetween(startTimeInclusive, endTimeExclusive) {
-    const filteredPlays = getPlaysBetween(startTimeInclusive, endTimeExclusive);
+  function drawTopAlbumsBetween(plays, startTimeInclusive, endTimeExclusive) {
+    const filteredPlays = getPlaysBetween(plays, startTimeInclusive, endTimeExclusive);
     const topNStrings = getTopNAlbumsAsString(filteredPlays, 5);
     updateListFromArray(topNStrings);
   }
-  function selectAllYears(firstYearInclusive, lastYearInclusive) {
+  function selectAllYears(plays, firstYearInclusive, lastYearInclusive) {
     const startTimeInclusive = new Date(firstYearInclusive, 0, 1);
     const endTimeExclusive = new Date(lastYearInclusive + 1, 0, 1);
-    drawTopAlbumsBetween(startTimeInclusive, endTimeExclusive);
+    drawTopAlbumsBetween(plays, startTimeInclusive, endTimeExclusive);
   }
-  function selectYear(lastYear) {
+  function selectYear(plays, lastYear) {
     const startTimeInclusive = new Date(lastYear, 0, 1);
     const endTimeExclusive = new Date(lastYear + 1, 0, 1);
-    drawTopAlbumsBetween(startTimeInclusive, endTimeExclusive);
+    drawTopAlbumsBetween(plays, startTimeInclusive, endTimeExclusive);
   }
+  var token = localStorage.getItem("access_token");
   fileInput.addEventListener("change", async () => {
+    const plays = [];
     const file = fileInput.files?.[0];
     if (file) {
       const zipReader = new ZipReader(new BlobReader(file));
@@ -9544,14 +9549,8 @@
             }
           }
         }
-        const token = localStorage.getItem("access_token");
-        if (!token) {
-          window.location.href = "/";
-        }
-        const firstDate = plays[0].ts;
-        const lastDate = plays[plays.length - 1].ts;
-        createYearRadioButtons(firstDate, lastDate, lastDate.getFullYear());
-        selectYear(lastDate.getFullYear());
+        createYearRadioButtons(plays);
+        selectYear(plays, plays[plays.length - 1].ts.getFullYear());
         for (let i = 0; i < preUploadElements.length; i++) {
           preUploadElements[i].style.display = "none";
         }
@@ -9568,47 +9567,30 @@
   var redirectUri = "http://localhost:8081";
   var urlParams = new URLSearchParams(window.location.search);
   var code = urlParams.get("code");
-  async function getToken(code1) {
-    const codeVerifierFromLocalStorage = localStorage.getItem("code_verifier");
-    if (codeVerifierFromLocalStorage) {
-      const payload = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: new URLSearchParams({
-          client_id: clientId,
-          grant_type: "authorization_code",
-          code: code1,
-          redirect_uri: redirectUri,
-          code_verifier: codeVerifierFromLocalStorage
-        })
-      };
-      const body = await fetch("https://accounts.spotify.com/api/token", payload);
-      const response = await body.json();
-      localStorage.setItem("access_token", response.access_token);
-    } else {
-      window.location.href = "/";
-    }
+  async function getToken(code1, codeVerifier) {
+    const payload = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: new URLSearchParams({
+        client_id: clientId,
+        grant_type: "authorization_code",
+        code: code1,
+        redirect_uri: redirectUri,
+        code_verifier: codeVerifier
+      })
+    };
+    const body = await fetch("https://accounts.spotify.com/api/token", payload);
+    const response = await body.json();
+    localStorage.setItem("access_token", response.access_token);
   }
-  if (code) {
-    getToken(code).then(() => {
-      const token = localStorage.getItem("access_token");
-      async function getTrack(trackId) {
-        const payload = {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Authorization": `Bearer ${token}`
-          }
-        };
-        const body = await fetch("https://api.spotify.com/v1/tracks/" + trackId, payload);
-        const response = await body.json();
-        console.log(response.album.images[0].url);
-      }
-      getTrack("00MYbj8WKfcv3Bz6qFhJKn");
+  var codeVerifierFromLocalStorage = localStorage.getItem("code_verifier");
+  if (!token && code && codeVerifierFromLocalStorage) {
+    getToken(code, codeVerifierFromLocalStorage).then(() => {
+      window.location.href = "/";
     });
-  } else {
+  } else if (!token) {
     const codeVerifier = generateRandomString();
     sha256(codeVerifier).then((d) => {
       const codeChallenge = base64encode(d);
