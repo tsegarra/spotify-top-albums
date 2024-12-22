@@ -9381,9 +9381,16 @@
   var Album = class {
     constructor(artistName, albumName) {
       this.playCountBySongTitle = {};
+      this.arbitraryTrackId = null;
       this.artistName = artistName;
       this.albumName = albumName;
       this.numPlays = 0;
+    }
+    setArbitraryTrackId(id) {
+      this.arbitraryTrackId = id;
+    }
+    getArbitraryTrackId() {
+      return this.arbitraryTrackId;
     }
     addPlayForTrack(trackName) {
       if (!(trackName in this.playCountBySongTitle)) {
@@ -9413,11 +9420,24 @@
         if (!(key in this.albumsByArtistAlbumString)) {
           this.albumsByArtistAlbumString[key] = new Album(artistName, albumName);
         }
-        this.albumsByArtistAlbumString[key].addPlayForTrack(p.master_metadata_track_name);
+        const album = this.albumsByArtistAlbumString[key];
+        album.addPlayForTrack(p.master_metadata_track_name);
+        if (!album.getArbitraryTrackId()) {
+          album.setArbitraryTrackId(p.spotify_track_uri.replace(/^spotify:track:/, ""));
+        }
       }
     }
     getAlbums() {
       return Object.values(this.albumsByArtistAlbumString);
+    }
+  };
+
+  // src/AlbumForDisplay.ts
+  var AlbumForDisplay = class {
+    constructor(albumTitle, artistTitle, imageUrl) {
+      this.albumTitle = albumTitle;
+      this.artistName = artistTitle;
+      this.imageUrl = imageUrl;
     }
   };
 
@@ -9430,6 +9450,7 @@
   var postUploadElements = document.getElementsByClassName("post-upload");
   var preUploadElements = document.getElementsByClassName("pre-upload");
   var yearSelectorElement = document.getElementById("year-selector");
+  var token = localStorage.getItem("access_token");
   function generateRandomString() {
     const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     const values = crypto.getRandomValues(new Uint8Array(64));
@@ -9496,16 +9517,53 @@
     const filteredAlbums = albumCollection.getAlbums().filter(
       (a) => a.getNumDistinctSongsPlayed() > 5
     );
-    return filteredAlbums.sort((a, b) => b.getNumPlays() - a.getNumPlays()).slice(0, n).map((a) => a.artistName + " - " + a.albumName);
+    const promises = filteredAlbums.sort((a, b) => b.getNumPlays() - a.getNumPlays()).slice(0, n).map(async (a) => {
+      const arbitraryTrackId = a.getArbitraryTrackId();
+      let imageUrl;
+      if (arbitraryTrackId) {
+        imageUrl = await getImageUrlForTrack(arbitraryTrackId, token);
+      } else {
+        imageUrl = null;
+      }
+      return new AlbumForDisplay(
+        a.albumName,
+        a.artistName,
+        imageUrl
+      );
+    });
+    return Promise.all(promises);
   }
-  function updateListFromArray(arr) {
-    const ulElement = document.querySelector("ol.display");
-    if (ulElement) {
-      ulElement.innerHTML = "";
-      arr.forEach((item) => {
-        const li = document.createElement("li");
-        li.textContent = item;
-        ulElement.appendChild(li);
+  function drawAlbumsToUi(albums) {
+    const listElement = document.getElementById("album-list");
+    if (listElement) {
+      listElement.innerHTML = "";
+      let i = 1;
+      albums.forEach((album) => {
+        const albumElement = document.createElement("div");
+        albumElement.className = "album";
+        const numberElement = document.createElement("span");
+        numberElement.className = "album-number";
+        numberElement.textContent = (i++).toString();
+        albumElement.appendChild(numberElement);
+        if (album.imageUrl) {
+          const artElement = document.createElement("img");
+          artElement.src = album.imageUrl;
+          artElement.alt = `Album art for ${album.albumTitle} by ${album.artistName}`;
+          artElement.className = "album-art";
+          albumElement.appendChild(artElement);
+        }
+        const albumLabelElement = document.createElement("div");
+        albumLabelElement.className = "album-label";
+        albumElement.appendChild(albumLabelElement);
+        const albumNameElement = document.createElement("span");
+        albumNameElement.textContent = album.albumTitle;
+        albumNameElement.className = "album-title";
+        albumLabelElement.appendChild(albumNameElement);
+        const artistNameElement = document.createElement("span");
+        artistNameElement.textContent = album.artistName;
+        artistNameElement.className = "artist-name";
+        albumLabelElement.appendChild(artistNameElement);
+        listElement.appendChild(albumElement);
       });
     } else {
       console.error('No element with class "display" found.');
@@ -9518,8 +9576,7 @@
   }
   function drawTopAlbumsBetween(plays, startTimeInclusive, endTimeExclusive) {
     const filteredPlays = getPlaysBetween(plays, startTimeInclusive, endTimeExclusive);
-    const topNStrings = getTopNAlbumsAsString(filteredPlays, 5);
-    updateListFromArray(topNStrings);
+    getTopNAlbumsAsString(filteredPlays, 5).then((topNAlbums) => drawAlbumsToUi(topNAlbums));
   }
   function selectAllYears(plays, firstYearInclusive, lastYearInclusive) {
     const startTimeInclusive = new Date(firstYearInclusive, 0, 1);
@@ -9531,13 +9588,12 @@
     const endTimeExclusive = new Date(lastYear + 1, 0, 1);
     drawTopAlbumsBetween(plays, startTimeInclusive, endTimeExclusive);
   }
-  var token = localStorage.getItem("access_token");
   fileInput.addEventListener("change", async () => {
-    const plays = [];
     const file = fileInput.files?.[0];
     if (file) {
       const zipReader = new ZipReader(new BlobReader(file));
       try {
+        const plays = [];
         const entries = await zipReader.getEntries();
         for (const entry of entries) {
           if (entry.getData) {
@@ -9583,30 +9639,101 @@
     };
     const body = await fetch("https://accounts.spotify.com/api/token", payload);
     const response = await body.json();
+    setTokenFromResponse(response);
+  }
+  function setTokenFromResponse(response) {
     localStorage.setItem("access_token", response.access_token);
+    localStorage.setItem("refresh_token", response.refresh_token);
+    localStorage.setItem("token_expiration", (Date.now() + response.expires_in * 1e3).toString());
+  }
+  async function refreshUsingRefreshToken(refreshToken2) {
+    const payload = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: new URLSearchParams({
+        client_id: clientId,
+        grant_type: "refresh_token",
+        refresh_token: refreshToken2
+      })
+    };
+    const response = await fetch("https://accounts.spotify.com/api/token", payload);
+    const data = await response.json();
+    if (data.access_token) {
+      setTokenFromResponse(data);
+    } else {
+      throw new Error("Failed to refresh token");
+    }
+  }
+  function isTokenExpired() {
+    const expirationTime = parseInt(localStorage.getItem("token_expiration") || "0", 10);
+    return Date.now() >= expirationTime;
+  }
+  function cacheImageUrlForTrack(trackId, imageUrl) {
+    const storedData = localStorage.getItem("trackImageUrls");
+    const trackImageUrls = storedData ? JSON.parse(storedData) : {};
+    trackImageUrls[trackId] = imageUrl;
+    localStorage.setItem("trackImageUrls", JSON.stringify(trackImageUrls));
+  }
+  function getImageUrlForTrackFromCache(trackId) {
+    const storedData = localStorage.getItem("trackImageUrls");
+    if (!storedData) {
+      return null;
+    }
+    const trackImageUrls = JSON.parse(storedData);
+    return trackImageUrls[trackId] || null;
+  }
+  async function getImageUrlForTrack(trackId, token2) {
+    const cachedImageUrl = getImageUrlForTrackFromCache(trackId);
+    if (cachedImageUrl) {
+      return cachedImageUrl;
+    }
+    const payload = {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Authorization": `Bearer ${token2}`
+      }
+    };
+    const body = await fetch("https://api.spotify.com/v1/tracks/" + trackId, payload);
+    const response = await body.json();
+    const imageUrl = response.album.images[0].url;
+    cacheImageUrlForTrack(trackId, imageUrl);
+    return imageUrl;
   }
   var codeVerifierFromLocalStorage = localStorage.getItem("code_verifier");
-  if (!token && code && codeVerifierFromLocalStorage) {
-    getToken(code, codeVerifierFromLocalStorage).then(() => {
-      window.location.href = "/";
-    });
-  } else if (!token) {
-    const codeVerifier = generateRandomString();
-    sha256(codeVerifier).then((d) => {
-      const codeChallenge = base64encode(d);
-      const scope = "user-read-private user-read-email";
-      const authUrl = new URL("https://accounts.spotify.com/authorize");
-      window.localStorage.setItem("code_verifier", codeVerifier);
-      const params = {
-        response_type: "code",
-        client_id: clientId,
-        scope,
-        code_challenge_method: "S256",
-        code_challenge: codeChallenge,
-        redirect_uri: redirectUri
-      };
-      authUrl.search = new URLSearchParams(params).toString();
-      window.location.href = authUrl.toString();
-    });
+  var refreshToken = localStorage.getItem("refresh_token");
+  var newTokenIsRequired = isTokenExpired() || !token;
+  if (newTokenIsRequired) {
+    if (refreshToken) {
+      console.log("token is expired and refreshtoken");
+      refreshUsingRefreshToken(refreshToken).then(() => {
+        window.location.href = "/";
+      });
+    } else if (code && codeVerifierFromLocalStorage) {
+      console.log("no token or token expired and we have a code");
+      getToken(code, codeVerifierFromLocalStorage).then(() => {
+        window.location.href = "/";
+      });
+    } else {
+      const codeVerifier = generateRandomString();
+      sha256(codeVerifier).then((d) => {
+        const codeChallenge = base64encode(d);
+        const scope = "user-read-private user-read-email";
+        const authUrl = new URL("https://accounts.spotify.com/authorize");
+        window.localStorage.setItem("code_verifier", codeVerifier);
+        const params = {
+          response_type: "code",
+          client_id: clientId,
+          scope,
+          code_challenge_method: "S256",
+          code_challenge: codeChallenge,
+          redirect_uri: redirectUri
+        };
+        authUrl.search = new URLSearchParams(params).toString();
+        window.location.href = authUrl.toString();
+      });
+    }
   }
 })();

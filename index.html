@@ -7,21 +7,28 @@
   <link rel="icon" href="favicon.ico" type="image/x-icon">
   <style>
     input { width: 100%; }
-    .post-upload { display: none; }
     .display > li { margin-bottom: 0.5rem; }
+
+    .post-upload {
+      display: none;
+      width: 100%;
+    }
 
     body {
       font-family: sans-serif;
+      background-color: #f675c2;
+      margin: 1rem 2rem;
+      display: flex;
+      justify-content: center;
+      flex-flow: column;
+      align-items: center;
     }
 
     /* General reset for fieldset */
     fieldset#year-selector {
-      border: 2px solid #ccc;
-      border-radius: 8px;
-      padding: 1rem;
-      margin: 0 auto 1rem;
-      background-color: #f9f9f9;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin: 0;
+      border: none;
+      padding: 0;
     }
 
     /* Styling for individual labels */
@@ -78,10 +85,77 @@
       border-color: #007BFF;
     }
 
+    .album {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    img.album-art {
+      flex-shrink: 1;
+      width: 20%;
+      max-width: 300px;
+    }
+
+    .album-label {
+      display: flex;
+      flex-flow: column;
+      gap: 0.25rem;
+    }
+
+    span.album-title {
+      font-weight: bold;
+      font-size: 0.75rem;
+    }
+
+    div#album-list {
+      display: flex !important;
+      flex-flow: column;
+      gap: 0.5rem;
+      max-width: 500px;
+    }
+
+    span.album-number {
+      font-size: 1.25rem;
+      font-weight: bold;
+    }
+
+    span.artist-name {
+      font-size: 0.7rem;
+    }
+
+    fieldset#year-selector {
+      gap: 4px;
+    }
+
+    #year-selector > div {
+      font-size: 0;
+    }
+
+    fieldset#year-selector label {
+      background-color: #3a3a3a;
+      color: white;
+      font-size: 9px;
+      border: none;
+      border-radius: 48px;
+      padding: 4px 10px;
+    }
+
+    fieldset#year-selector input[type="radio"]:checked + label {
+      background-color: #13d660;
+      color: black;
+    }
+
+    fieldset#year-selector label:hover {
+      background-color: #565656;
+      color: white;
+    }
+
   </style>
 </head>
 <body>
   <div class="pre-upload">
+    <h2>Upload your streaming history .zip file</h2>
     <input type="file" id="file-input" />
   </div>
 
@@ -92,7 +166,12 @@
     <label for="endMonthIndex">End</label><input type="range" id="endMonthIndex" min="0" max="10" step="1" />
     <div id="endMonthText"></div>-->
   </div>
-  <ol class="post-upload display"></ol>
+
+  <div class="post-upload">
+    <h2>My Top Albums</h2>
+  </div>
+
+  <div class="post-upload" id="album-list"></div>
   <script src="zip.min.js"></script>
   <script src="main.js" defer></script>
 </body>
