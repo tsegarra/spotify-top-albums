@@ -9525,7 +9525,7 @@
     const filteredAlbums = albumCollection.getAlbums().filter(
       (a) => a.getNumDistinctSongsPlayed() > 5
     );
-    const promises = filteredAlbums.sort((a, b) => b.getNumPlaysOfNthMostPlayedSong(5) - a.getNumPlaysOfNthMostPlayedSong(5)).slice(0, n).map(async (a) => {
+    const promises = filteredAlbums.sort((a, b) => b.getNumPlaysOfNthMostPlayedSong(10) - a.getNumPlaysOfNthMostPlayedSong(10)).slice(0, n).map(async (a) => {
       const arbitraryTrackId = a.getArbitraryTrackId();
       let imageUrl;
       if (arbitraryTrackId) {
