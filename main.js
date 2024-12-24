@@ -5159,8 +5159,8 @@
   function getConfiguration() {
     return config;
   }
-  function getChunkSize(config2) {
-    return Math.max(config2.chunkSize, MINIMUM_CHUNK_SIZE);
+  function getChunkSize(config3) {
+    return Math.max(config3.chunkSize, MINIMUM_CHUNK_SIZE);
   }
   function configure(configuration) {
     const {
@@ -7947,7 +7947,7 @@
   var CODEC_DEFLATE = "deflate";
   var CODEC_INFLATE = "inflate";
   var CodecStream = class extends TransformStream {
-    constructor(options, config2) {
+    constructor(options, config3) {
       super({});
       const codec2 = this;
       const { codecType } = options;
@@ -7959,7 +7959,7 @@
       }
       let outputSize = 0;
       let inputSize = 0;
-      const stream = new Stream2(options, config2);
+      const stream = new Stream2(options, config3);
       const readable = super.readable;
       const inputSizeStream = new TransformStream({
         transform(chunk, controller) {
@@ -8029,11 +8029,11 @@
   // lib/zipjs/lib/core/codec-worker.js
   var WEB_WORKERS_SUPPORTED = typeof Worker != UNDEFINED_TYPE;
   var CodecWorker = class {
-    constructor(workerData, { readable, writable }, { options, config: config2, streamOptions, useWebWorkers, transferStreams, scripts }, onTaskFinished) {
+    constructor(workerData, { readable, writable }, { options, config: config3, streamOptions, useWebWorkers, transferStreams, scripts }, onTaskFinished) {
       const { signal } = streamOptions;
       Object.assign(workerData, {
         busy: true,
-        readable: readable.pipeThrough(new ChunkStream(config2.chunkSize)).pipeThrough(new ProgressWatcherStream(readable, streamOptions), { signal }),
+        readable: readable.pipeThrough(new ChunkStream(config3.chunkSize)).pipeThrough(new ProgressWatcherStream(readable, streamOptions), { signal }),
         writable,
         options: Object.assign({}, options),
         scripts,
@@ -8066,7 +8066,7 @@
           onTaskFinished(workerData);
         }
       });
-      return (useWebWorkers && WEB_WORKERS_SUPPORTED ? createWebWorkerInterface : createWorkerInterface)(workerData, config2);
+      return (useWebWorkers && WEB_WORKERS_SUPPORTED ? createWebWorkerInterface : createWorkerInterface)(workerData, config3);
     }
   };
   var ProgressWatcherStream = class extends TransformStream {
@@ -8100,20 +8100,20 @@
     } catch (_error) {
     }
   }
-  function createWorkerInterface(workerData, config2) {
+  function createWorkerInterface(workerData, config3) {
     return {
-      run: () => runWorker(workerData, config2)
+      run: () => runWorker(workerData, config3)
     };
   }
-  function createWebWorkerInterface(workerData, config2) {
-    const { baseURL: baseURL2, chunkSize } = config2;
+  function createWebWorkerInterface(workerData, config3) {
+    const { baseURL: baseURL2, chunkSize } = config3;
     if (!workerData.interface) {
       let worker;
       try {
         worker = getWebWorker(workerData.scripts[0], baseURL2, workerData);
       } catch (_error) {
         WEB_WORKERS_SUPPORTED = false;
-        return createWorkerInterface(workerData, config2);
+        return createWorkerInterface(workerData, config3);
       }
       Object.assign(workerData, {
         worker,
@@ -8124,9 +8124,9 @@
     }
     return workerData.interface;
   }
-  async function runWorker({ options, readable, writable, onTaskFinished }, config2) {
+  async function runWorker({ options, readable, writable, onTaskFinished }, config3) {
     try {
-      const codecStream = new CodecStream(options, config2);
+      const codecStream = new CodecStream(options, config3);
       await readable.pipeThrough(codecStream).pipeTo(writable, { preventClose: true, preventAbort: true });
       const {
         signature,
@@ -8142,7 +8142,7 @@
       onTaskFinished();
     }
   }
-  async function runWebWorker(workerData, config2) {
+  async function runWebWorker(workerData, config3) {
     let resolveResult, rejectResult;
     const result = new Promise((resolve, reject) => {
       resolveResult = resolve;
@@ -8161,7 +8161,7 @@
       type: MESSAGE_START,
       scripts: scripts.slice(1),
       options,
-      config: config2,
+      config: config3,
       readable,
       writable
     }, workerData);
@@ -8311,14 +8311,14 @@
   var pendingRequests = [];
   var indexWorker = 0;
   async function runWorker2(stream, workerOptions) {
-    const { options, config: config2 } = workerOptions;
+    const { options, config: config3 } = workerOptions;
     const { transferStreams, useWebWorkers, useCompressionStream, codecType, compressed, signed, encrypted } = options;
-    const { workerScripts, maxWorkers: maxWorkers2 } = config2;
+    const { workerScripts, maxWorkers: maxWorkers2 } = config3;
     workerOptions.transferStreams = transferStreams || transferStreams === UNDEFINED_VALUE;
     const streamCopy = !compressed && !signed && !encrypted && !workerOptions.transferStreams;
-    workerOptions.useWebWorkers = !streamCopy && (useWebWorkers || useWebWorkers === UNDEFINED_VALUE && config2.useWebWorkers);
+    workerOptions.useWebWorkers = !streamCopy && (useWebWorkers || useWebWorkers === UNDEFINED_VALUE && config3.useWebWorkers);
     workerOptions.scripts = workerOptions.useWebWorkers && workerScripts ? workerScripts[codecType] : [];
-    options.useCompressionStream = useCompressionStream || useCompressionStream === UNDEFINED_VALUE && config2.useCompressionStream;
+    options.useCompressionStream = useCompressionStream || useCompressionStream === UNDEFINED_VALUE && config3.useCompressionStream;
     return (await getWorker()).run();
     async function getWorker() {
       const workerData = pool.find((workerData2) => !workerData2.busy);
@@ -8347,8 +8347,8 @@
     }
   }
   function terminateWorker(workerData, workerOptions) {
-    const { config: config2 } = workerOptions;
-    const { terminateWorkerTimeout } = config2;
+    const { config: config3 } = workerOptions;
+    const { terminateWorkerTimeout } = config3;
     if (Number.isFinite(terminateWorkerTimeout) && terminateWorkerTimeout >= 0) {
       if (workerData.terminated) {
         workerData.terminated = false;
@@ -8768,7 +8768,7 @@
     async *getEntriesGenerator(options = {}) {
       const zipReader = this;
       let { reader } = zipReader;
-      const { config: config2 } = zipReader;
+      const { config: config3 } = zipReader;
       await initStream(reader);
       if (reader.size === UNDEFINED_VALUE || !reader.readUint8Array) {
         reader = new BlobReader(await new Response(reader.readable).blob());
@@ -8777,7 +8777,7 @@
       if (reader.size < END_OF_CENTRAL_DIR_LENGTH) {
         throw new Error(ERR_BAD_FORMAT);
       }
-      reader.chunkSize = getChunkSize(config2);
+      reader.chunkSize = getChunkSize(config3);
       const endOfDirectoryInfo = await seekSignature(reader, END_OF_CENTRAL_DIR_SIGNATURE, reader.size, END_OF_CENTRAL_DIR_LENGTH, MAX_16_BITS * 16);
       if (!endOfDirectoryInfo) {
         const signatureArray = await readUint8Array(reader, 0, 4);
@@ -8868,7 +8868,7 @@
       const filenameEncoding = getOptionValue(zipReader, options, "filenameEncoding");
       const commentEncoding = getOptionValue(zipReader, options, "commentEncoding");
       for (let indexFile = 0; indexFile < filesLength; indexFile++) {
-        const fileEntry = new ZipEntry(reader, config2, zipReader.options);
+        const fileEntry = new ZipEntry(reader, config3, zipReader.options);
         if (getUint32(directoryView, offset) != CENTRAL_FILE_HEADER_SIGNATURE) {
           throw new Error(ERR_CENTRAL_DIRECTORY_NOT_FOUND);
         }
@@ -8957,10 +8957,10 @@
     }
   };
   var ZipEntry = class {
-    constructor(reader, config2, options) {
+    constructor(reader, config3, options) {
       Object.assign(this, {
         reader,
-        config: config2,
+        config: config3,
         options
       });
     }
@@ -8972,7 +8972,7 @@
         diskNumberStart,
         extraFieldAES,
         compressionMethod,
-        config: config2,
+        config: config3,
         bitFlag,
         signature,
         rawLastModDate,
@@ -9051,7 +9051,7 @@
           transferStreams: getOptionValue(zipEntry, options, "transferStreams"),
           checkPasswordOnly
         },
-        config: config2,
+        config: config3,
         streamOptions: { signal, size, onstart, onprogress, onend }
       };
       let outputSize = 0;
@@ -13624,6 +13624,23 @@
     constants: constants_1
   };
 
+  // src/Configuration/SampleRankConfiguration.ts
+  var SampleRankConfiguration = class {
+    includePlay(p) {
+      return true;
+    }
+    getAlbumScore(a) {
+      const numDistinctSongsPlayed = a.getNumDistinctSongsPlayed();
+      if (numDistinctSongsPlayed < 10) {
+        return a.getNumPlaysOfNthMostPlayedSong(numDistinctSongsPlayed);
+      }
+      return a.getNumPlaysOfNthMostPlayedSong(10);
+    }
+    includeAlbum(a) {
+      return a.getNumDistinctSongsPlayed() > 5;
+    }
+  };
+
   // src/main.ts
   var fileInput = document.getElementById("file-input");
   var startInput = document.getElementById("startMonthIndex");
@@ -13634,6 +13651,7 @@
   var preUploadElements = document.getElementsByClassName("pre-upload");
   var yearSelectorElement = document.getElementById("year-selector");
   var token = localStorage.getItem("access_token");
+  var config2 = new SampleRankConfiguration();
   function decompressPlays(b64encoded) {
     function decodeBase64ToUint8Array(base64String) {
       const binaryString = atob(base64String);
@@ -13724,12 +13742,7 @@
     filteredPlays.forEach((p) => {
       albumCollection.addPlay(p);
     });
-    const filteredAlbums = albumCollection.getAlbums().filter(
-      (a) => a.getNumDistinctSongsPlayed() > 5
-    );
-    const promises = filteredAlbums.sort(
-      (a, b) => b.getNumPlaysOfNthMostPlayedSong(10) - a.getNumPlaysOfNthMostPlayedSong(10)
-    ).slice(0, n).map(async (a) => {
+    const promises = albumCollection.getAlbums().filter((a) => config2.includeAlbum(a)).sort((a, b) => config2.getAlbumScore(b) - config2.getAlbumScore(a)).slice(0, n).map(async (a) => {
       const arbitraryTrackId = a.getArbitraryTrackId();
       let imageUrl;
       if (arbitraryTrackId) {
@@ -13787,8 +13800,16 @@
     );
   }
   function drawTopAlbumsBetween(plays, startTimeInclusive, endTimeExclusive) {
-    const filteredPlays = getPlaysBetween(plays.filter((p) => p.reason_end === "trackdone"), startTimeInclusive, endTimeExclusive);
-    getTopNAlbumsForDisplay(filteredPlays, 10).then((topNAlbums) => drawAlbumsToUi(topNAlbums));
+    const filteredPlays = getPlaysBetween(
+      plays.filter(
+        (p) => config2.includePlay(p)
+      ),
+      startTimeInclusive,
+      endTimeExclusive
+    );
+    getTopNAlbumsForDisplay(filteredPlays, 5).then(
+      (topNAlbums) => drawAlbumsToUi(topNAlbums)
+    );
   }
   function selectAllYears(plays, firstYearInclusive, lastYearInclusive) {
     const startTimeInclusive = new Date(firstYearInclusive, 0, 1);
