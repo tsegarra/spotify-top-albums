@@ -13843,7 +13843,6 @@
             }
           }
           const compressedPlays2 = compressPlays(plays);
-          localStorage.setItem("plays", compressedPlays2);
           setUpPostUploadUi(plays);
         } catch (e2) {
           console.error(e2);
