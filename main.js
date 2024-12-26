@@ -9406,9 +9406,10 @@
       const artistName = p.master_metadata_album_artist_name;
       const albumName = p.master_metadata_album_album_name;
       if (artistName && albumName) {
-        let key = artistName + " - " + albumName;
+        const standardizedAlbumName = this.standardizeAlbumTitle(albumName);
+        let key = artistName + " - " + standardizedAlbumName;
         if (!(key in this.albumsByArtistAlbumString)) {
-          this.albumsByArtistAlbumString[key] = new Album(artistName, albumName);
+          this.albumsByArtistAlbumString[key] = new Album(artistName, standardizedAlbumName);
         }
         const album = this.albumsByArtistAlbumString[key];
         album.addPlayForTrack(p.master_metadata_track_name);
@@ -9416,6 +9417,9 @@
           album.setArbitraryTrackId(p.spotify_track_uri.replace(/^spotify:track:/, ""));
         }
       }
+    }
+    standardizeAlbumTitle(albumTitle) {
+      return albumTitle;
     }
     getAlbums() {
       return Object.values(this.albumsByArtistAlbumString);
@@ -13892,7 +13896,7 @@
   }
   databaseHandler.read().then((compressedPlays) => {
     hideLoadingElements();
-    if (compressedPlays) {
+    if (compressedPlays && !reupload) {
       setUpPostUploadUi(decompressPlays(compressedPlays));
     } else {
       showPreUploadElements();
@@ -13952,6 +13956,7 @@
   var rootUri = isLive ? "/spotify-top-albums" : "/";
   var urlParams = new URLSearchParams(window.location.search);
   var code = urlParams.get("code");
+  var reupload = urlParams.get("reupload");
   async function getToken(code1, codeVerifier) {
     const payload = {
       method: "POST",
