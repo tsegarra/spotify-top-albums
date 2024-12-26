@@ -35,15 +35,13 @@
       color: #006400 !important;
     }
 
-    /* General reset for fieldset */
-    fieldset#year-selector {
+    fieldset.selector {
       margin: 0;
       border: none;
       padding: 0;
     }
 
-    /* Styling for individual labels */
-    fieldset#year-selector label {
+    fieldset.selector label {
       display: inline-block;
       font-size: 16px;
       color: #333;
@@ -51,31 +49,27 @@
       transition: color 0.3s;
     }
 
-    fieldset#year-selector label:hover {
+    fieldset.selector label:hover {
       color: #007BFF;
     }
 
-    /* Styling for radio buttons */
-    fieldset#year-selector input[type="radio"] {
+    fieldset.selector input[type="radio"] {
       display: none;
       accent-color: #007BFF;
     }
 
-    /* Add focus outline for accessibility */
-    fieldset#year-selector input[type="radio"]:focus {
+    fieldset.selector input[type="radio"]:focus {
       outline: 2px solid #007BFF;
       outline-offset: 2px;
     }
 
-    /* Optional: make the fieldset look like a card */
-    fieldset#year-selector {
+    fieldset.selector {
       display: flex;
       flex-wrap: wrap;
       gap: 0.5rem;
     }
 
-    /* Align radio buttons in rows */
-    fieldset#year-selector label {
+    fieldset.selector label {
       text-align: center;
       border-radius: 4px;
       background-color: #fff;
@@ -85,12 +79,11 @@
       user-select: none;
     }
 
-    fieldset#year-selector label:hover {
+    fieldset.selector label:hover {
       background-color: #f0f0f0;
     }
 
-    /* Optional: style the selected radio button's label */
-    fieldset#year-selector input[type="radio"]:checked + label {
+    fieldset.selector input[type="radio"]:checked + label {
       background-color: #007BFF;
       color: white;
       border-color: #007BFF;
@@ -137,15 +130,30 @@
       font-size: 0.7rem;
     }
 
-    fieldset#year-selector {
-      gap: 4px;
+    .selected-type-all-time #month-selector,
+    .selected-type-all-time #year-selector,
+    .selected-type-year #month-selector {
+      display: none;
     }
 
-    #year-selector > div {
+    fieldset.selector {
+      gap: 4px;
+      margin-top: 0.5rem;
+      border-top: 1px solid #2e2e2e;
+      padding-top: 0.5rem;
+    }
+
+    fieldset.selector:first-child {
+      border-top: none;
+      margin-top: 0;
+      padding-top: 0;
+    }
+
+    fieldset.selector > div {
       font-size: 0;
     }
 
-    fieldset#year-selector label {
+    fieldset.selector label {
       background-color: #3a3a3a;
       color: white;
       font-size: 9px;
@@ -154,12 +162,12 @@
       padding: 4px 10px;
     }
 
-    fieldset#year-selector input[type="radio"]:checked + label {
+    fieldset.selector input[type="radio"]:checked + label {
       background-color: #13d660;
       color: black;
     }
 
-    fieldset#year-selector label:hover {
+    fieldset.selector label:hover {
       background-color: #565656;
       color: white;
     }
@@ -171,6 +179,11 @@
     .loading > img {
       width: 32px;
       height: auto;
+    }
+
+    p.no-albums-found-message {
+      margin: 0;
+      font-size: 12px;
     }
   </style>
 </head>
@@ -186,8 +199,27 @@
     <input type="file" id="file-input" />
   </div>
 
-  <div class="post-upload controls">
-    <fieldset id="year-selector"></fieldset>
+  <div id="controls-container" class="post-upload controls selected-type-year">
+    <fieldset class="selector" id="type-selector">
+      <div><input type="radio" id="type-all-time" name="type" value="all-time"><label for="type-all-time">All time</label></div>
+      <div><input type="radio" id="type-year" name="type" value="year" checked><label for="type-year">Yearly</label></div>
+      <div><input type="radio" id="type-month" name="type" value="month"><label for="type-month">Monthly</label></div>
+    </fieldset>
+    <fieldset class="selector" id="year-selector"></fieldset>
+    <fieldset class="selector" id="month-selector">
+      <div><input type="radio" id="month-january" name="month" value="january" checked><label for="month-january">January</label></div>
+      <div><input type="radio" id="month-february" name="month" value="february"><label for="month-february">February</label></div>
+      <div><input type="radio" id="month-march" name="month" value="march"><label for="month-march">March</label></div>
+      <div><input type="radio" id="month-april" name="month" value="april"><label for="month-april">April</label></div>
+      <div><input type="radio" id="month-may" name="month" value="may"><label for="month-may">May</label></div>
+      <div><input type="radio" id="month-june" name="month" value="june"><label for="month-june">June</label></div>
+      <div><input type="radio" id="month-july" name="month" value="july"><label for="month-july">July</label></div>
+      <div><input type="radio" id="month-august" name="month" value="august"><label for="month-august">August</label></div>
+      <div><input type="radio" id="month-september" name="month" value="september"><label for="month-september">September</label></div>
+      <div><input type="radio" id="month-october" name="month" value="october"><label for="month-october">October</label></div>
+      <div><input type="radio" id="month-november" name="month" value="november"><label for="month-november">November</label></div>
+      <div><input type="radio" id="month-december" name="month" value="december"><label for="month-december">December</label></div>
+    </fieldset>
     <!--<label for="startMonthIndex">Start</label><input type="range" id="startMonthIndex" min="0" max="10" step="1" />
     <div id="startMonthText"></div>
     <label for="endMonthIndex">End</label><input type="range" id="endMonthIndex" min="0" max="10" step="1" />
@@ -195,7 +227,7 @@
   </div>
 
   <div class="post-upload">
-    <h2>Your Top Albums</h2>
+    <h2>Your Top Albums<span id="list-header-qualifier"></span></h2>
   </div>
 
   <div class="post-upload" id="album-list"></div>

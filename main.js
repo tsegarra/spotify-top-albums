@@ -13711,6 +13711,11 @@
   var preUploadElements = document.getElementsByClassName("pre-upload");
   var loadingElements = document.getElementsByClassName("loading");
   var yearSelectorElement = document.getElementById("year-selector");
+  var typeSelectorFieldSet = document.getElementById("type-selector");
+  var monthSelectorFieldSet = document.getElementById("month-selector");
+  var yearSelectorFieldSet = document.getElementById("year-selector");
+  var listHeaderQualifierElement = document.getElementById("list-header-qualifier");
+  var controlsElement = document.getElementById("controls-container");
   var token = localStorage.getItem("access_token");
   var config2 = new SampleRankConfiguration();
   function decompressPlays(b64encoded) {
@@ -13761,23 +13766,15 @@
     const startYear = startDate.getFullYear();
     const endYear = endDate.getFullYear();
     const fragment = document.createDocumentFragment();
-    const allRadioButton = createRadioButton(
-      "All time",
-      "0",
-      false,
-      (e2) => selectAllYears(
-        plays,
-        startDate.getFullYear(),
-        endDate.getFullYear()
-      )
-    );
-    fragment.appendChild(allRadioButton);
     for (let year = startYear; year <= endYear; year++) {
       const radioButton = createRadioButton(
         year.toString(),
         year.toString(),
         initialYear === year,
-        (e2) => selectYear(plays, parseInt(e2.target.value))
+        (e2) => {
+          setRadioValue("month", "january");
+          updateSelectionFromUi(plays);
+        }
       );
       fragment.appendChild(radioButton);
     }
@@ -13822,39 +13819,42 @@
   }
   function drawAlbumsToUi(albums) {
     const listElement = document.getElementById("album-list");
-    if (listElement) {
-      listElement.innerHTML = "";
-      let i = 1;
-      albums.forEach((album) => {
-        const albumElement = document.createElement("div");
-        albumElement.className = "album";
-        const numberElement = document.createElement("span");
-        numberElement.className = "album-number";
-        numberElement.textContent = (i++).toString();
-        albumElement.appendChild(numberElement);
-        if (album.imageUrl) {
-          const artElement = document.createElement("img");
-          artElement.src = album.imageUrl;
-          artElement.alt = `Album art for ${album.albumTitle} by ${album.artistName}`;
-          artElement.className = "album-art";
-          albumElement.appendChild(artElement);
-        }
-        const albumLabelElement = document.createElement("div");
-        albumLabelElement.className = "album-label";
-        albumElement.appendChild(albumLabelElement);
-        const albumNameElement = document.createElement("span");
-        albumNameElement.textContent = album.albumTitle;
-        albumNameElement.className = "album-title";
-        albumLabelElement.appendChild(albumNameElement);
-        const artistNameElement = document.createElement("span");
-        artistNameElement.textContent = album.artistName;
-        artistNameElement.className = "artist-name";
-        albumLabelElement.appendChild(artistNameElement);
-        listElement.appendChild(albumElement);
-      });
-    } else {
-      console.error('No element with class "display" found.');
+    listElement.innerHTML = "";
+    if (albums.length < 1) {
+      const message = document.createElement("p");
+      message.className = "no-albums-found-message";
+      message.textContent = "No albums found for selected period.";
+      listElement.appendChild(message);
+      return;
     }
+    let i = 1;
+    albums.forEach((album) => {
+      const albumElement = document.createElement("div");
+      albumElement.className = "album";
+      const numberElement = document.createElement("span");
+      numberElement.className = "album-number";
+      numberElement.textContent = (i++).toString();
+      albumElement.appendChild(numberElement);
+      if (album.imageUrl) {
+        const artElement = document.createElement("img");
+        artElement.src = album.imageUrl;
+        artElement.alt = `Album art for ${album.albumTitle} by ${album.artistName}`;
+        artElement.className = "album-art";
+        albumElement.appendChild(artElement);
+      }
+      const albumLabelElement = document.createElement("div");
+      albumLabelElement.className = "album-label";
+      albumElement.appendChild(albumLabelElement);
+      const albumNameElement = document.createElement("span");
+      albumNameElement.textContent = album.albumTitle;
+      albumNameElement.className = "album-title";
+      albumLabelElement.appendChild(albumNameElement);
+      const artistNameElement = document.createElement("span");
+      artistNameElement.textContent = album.artistName;
+      artistNameElement.className = "artist-name";
+      albumLabelElement.appendChild(artistNameElement);
+      listElement.appendChild(albumElement);
+    });
   }
   function getPlaysBetween(plays, startTimeInclusive, endTimeExclusive) {
     return plays.filter(
@@ -13873,15 +13873,39 @@
       (topNAlbums) => drawAlbumsToUi(topNAlbums)
     );
   }
-  function selectAllYears(plays, firstYearInclusive, lastYearInclusive) {
+  function selectAllYears(plays) {
+    const firstYearInclusive = plays[0].ts.getFullYear();
+    const lastYearInclusive = plays[plays.length - 1].ts.getFullYear();
     const startTimeInclusive = new Date(firstYearInclusive, 0, 1);
     const endTimeExclusive = new Date(lastYearInclusive + 1, 0, 1);
     drawTopAlbumsBetween(plays, startTimeInclusive, endTimeExclusive);
+    listHeaderQualifierElement.textContent = "";
   }
-  function selectYear(plays, lastYear) {
-    const startTimeInclusive = new Date(lastYear, 0, 1);
-    const endTimeExclusive = new Date(lastYear + 1, 0, 1);
+  function selectMonth(plays, monthName, year) {
+    const monthIndex = [
+      "january",
+      "february",
+      "march",
+      "april",
+      "may",
+      "june",
+      "july",
+      "august",
+      "september",
+      "october",
+      "november",
+      "december"
+    ].indexOf(monthName);
+    const startTimeInclusive = new Date(year, monthIndex, 1);
+    const endTimeExclusive = new Date(year, monthIndex + 1, 1);
     drawTopAlbumsBetween(plays, startTimeInclusive, endTimeExclusive);
+    listHeaderQualifierElement.textContent = " of " + monthName.charAt(0).toUpperCase() + monthName.slice(1) + " " + year;
+  }
+  function selectYear(plays, year) {
+    const startTimeInclusive = new Date(year, 0, 1);
+    const endTimeExclusive = new Date(year + 1, 0, 1);
+    drawTopAlbumsBetween(plays, startTimeInclusive, endTimeExclusive);
+    listHeaderQualifierElement.textContent = " of " + year;
   }
   var databaseHandler = new DatabaseHandler();
   function hideLoadingElements() {
@@ -13939,9 +13963,47 @@
     alert(reason);
     showPreUploadElements();
   });
+  function updateSelectionFromUi(plays) {
+    const selectedYear = parseInt(document.querySelector('input[name="year"]:checked').value);
+    const selectedType = document.querySelector('input[name="type"]:checked').value;
+    if (selectedType === "month") {
+      const selectedMonthName = document.querySelector('input[name="month"]:checked').value;
+      selectMonth(plays, selectedMonthName, selectedYear);
+    } else if (selectedType === "year") {
+      selectYear(plays, selectedYear);
+    } else {
+      selectAllYears(plays);
+    }
+  }
+  function setRadioValue(name, value) {
+    const radios = document.querySelectorAll(`input[name="${name}"]`);
+    radios.forEach((radio) => {
+      if (radio.value === value) {
+        radio.checked = true;
+      }
+    });
+  }
   function setUpPostUploadUi(plays) {
     createYearRadioButtons(plays);
-    selectYear(plays, plays[plays.length - 1].ts.getFullYear());
+    typeSelectorFieldSet.addEventListener("change", (e2) => {
+      controlsElement.classList.remove("selected-type-year");
+      controlsElement.classList.remove("selected-type-all-time");
+      controlsElement.classList.remove("selected-type-month");
+      const selectedType = e2.target.value;
+      if (selectedType === "month") {
+        controlsElement.classList.add("selected-type-month");
+      } else if (selectedType === "year") {
+        controlsElement.classList.add("selected-type-year");
+      } else {
+        controlsElement.classList.add("selected-type-all-time");
+      }
+      updateSelectionFromUi(plays);
+    });
+    monthSelectorFieldSet.addEventListener("change", (e2) => {
+      updateSelectionFromUi(plays);
+    });
+    const lastYearInData = plays[plays.length - 1].ts.getFullYear();
+    selectYear(plays, lastYearInData);
     for (let i = 0; i < preUploadElements.length; i++) {
       preUploadElements[i].style.display = "none";
     }
