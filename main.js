@@ -13641,6 +13641,62 @@
     }
   };
 
+  // src/DatabaseHandler.ts
+  var DatabaseHandler = class {
+    constructor() {
+    }
+    write(input, onSuccess, onError) {
+      const request = indexedDB.open("MyDatabase", 1);
+      request.onupgradeneeded = function(event) {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains("MyObjectStore")) {
+          db.createObjectStore("MyObjectStore", { keyPath: "id" });
+        }
+      };
+      request.onsuccess = (event) => {
+        const db = event.target.result;
+        const transaction = db.transaction("MyObjectStore", "readwrite");
+        const objectStore = transaction.objectStore("MyObjectStore");
+        const addRequest = objectStore.put({ id: 1, value: input });
+        addRequest.onsuccess = () => {
+          onSuccess();
+        };
+        addRequest.onerror = function() {
+          onError(addRequest.error);
+        };
+      };
+      request.onerror = function() {
+        alert("Failed to open database: " + request.error);
+      };
+    }
+    async read() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open("MyDatabase", 1);
+        request.onupgradeneeded = function(event) {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains("MyObjectStore")) {
+            db.createObjectStore("MyObjectStore", { keyPath: "id" });
+          }
+        };
+        request.onsuccess = (event) => {
+          const db = event.target.result;
+          const transaction = db.transaction("MyObjectStore", "readwrite");
+          const objectStore = transaction.objectStore("MyObjectStore");
+          const getRequest = objectStore.get(1);
+          getRequest.onsuccess = () => {
+            resolve(getRequest.result?.value);
+          };
+          getRequest.onerror = function() {
+            reject(getRequest.error);
+          };
+        };
+        request.onerror = function() {
+          alert("Failed to open database: " + request.error);
+        };
+      });
+    }
+  };
+
   // src/main.ts
   var fileInput = document.getElementById("file-input");
   var startInput = document.getElementById("startMonthIndex");
@@ -13676,6 +13732,7 @@
       return btoa(binaryString);
     }
     const data = JSON.stringify(plays);
+    console.log(data.length);
     const compressedStringBuffer = pako.gzip(data);
     return encodeUint8ArrayToBase64(compressedStringBuffer);
   }
@@ -13821,37 +13878,46 @@
     const endTimeExclusive = new Date(lastYear + 1, 0, 1);
     drawTopAlbumsBetween(plays, startTimeInclusive, endTimeExclusive);
   }
-  var compressedPlays = localStorage.getItem("plays");
-  if (compressedPlays) {
-    setUpPostUploadUi(decompressPlays(compressedPlays));
-  } else {
-    fileInput.addEventListener("change", async () => {
-      const file = fileInput.files?.[0];
-      if (file) {
-        const zipReader = new ZipReader(new BlobReader(file));
-        try {
-          const plays = [];
-          const entries = await zipReader.getEntries();
-          for (const entry of entries) {
-            if (entry.getData) {
-              const filename = entry.filename;
-              if (filename.startsWith("Spotify Extended Streaming History/Streaming_History_Audio_")) {
-                const jsonFileContent = await entry.getData(new TextWriter());
-                const playsData = JSON.parse(jsonFileContent);
-                plays.push(...playsData.map((item) => Play.fromJsonObject(item)));
+  var databaseHandler = new DatabaseHandler();
+  databaseHandler.read().then((compressedPlays) => {
+    if (compressedPlays) {
+      setUpPostUploadUi(decompressPlays(compressedPlays));
+    } else {
+      fileInput.addEventListener("change", async () => {
+        const file = fileInput.files?.[0];
+        if (file) {
+          const zipReader = new ZipReader(new BlobReader(file));
+          try {
+            const plays = [];
+            const entries = await zipReader.getEntries();
+            for (const entry of entries) {
+              if (entry.getData) {
+                const filename = entry.filename;
+                if (filename.startsWith("Spotify Extended Streaming History/Streaming_History_Audio_")) {
+                  const jsonFileContent = await entry.getData(new TextWriter());
+                  const playsData = JSON.parse(jsonFileContent);
+                  plays.push(...playsData.map((item) => Play.fromJsonObject(item)));
+                }
               }
             }
+            databaseHandler.write(
+              compressPlays(plays),
+              () => {
+              },
+              () => {
+                alert("Failed to save file.");
+              }
+            );
+            setUpPostUploadUi(plays);
+          } catch (e2) {
+            console.error(e2);
+            alert("Invalid file format.");
           }
-          const compressedPlays2 = compressPlays(plays);
-          setUpPostUploadUi(plays);
-        } catch (e2) {
-          console.error(e2);
-          alert("Invalid file format.");
+          await zipReader.close();
         }
-        await zipReader.close();
-      }
-    });
-  }
+      });
+    }
+  }).catch((reason) => alert(reason));
   function setUpPostUploadUi(plays) {
     createYearRadioButtons(plays);
     selectYear(plays, plays[plays.length - 1].ts.getFullYear());
