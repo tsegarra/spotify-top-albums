@@ -13885,9 +13885,9 @@
       loadingElements[i].style.display = "none";
     }
   }
-  function hidePreUploadElements() {
+  function showPreUploadElements() {
     for (let i = 0; i < preUploadElements.length; i++) {
-      preUploadElements[i].style.display = "none";
+      preUploadElements[i].style.display = "block";
     }
   }
   databaseHandler.read().then((compressedPlays) => {
@@ -13895,7 +13895,7 @@
     if (compressedPlays) {
       setUpPostUploadUi(decompressPlays(compressedPlays));
     } else {
-      hidePreUploadElements();
+      showPreUploadElements();
       fileInput.addEventListener("change", async () => {
         const file = fileInput.files?.[0];
         if (file) {
@@ -13933,7 +13933,7 @@
   }).catch((reason) => {
     hideLoadingElements();
     alert(reason);
-    hidePreUploadElements();
+    showPreUploadElements();
   });
   function setUpPostUploadUi(plays) {
     createYearRadioButtons(plays);
