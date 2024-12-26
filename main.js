@@ -13705,6 +13705,7 @@
   var endOutput = document.getElementById("endMonthText");
   var postUploadElements = document.getElementsByClassName("post-upload");
   var preUploadElements = document.getElementsByClassName("pre-upload");
+  var loadingElements = document.getElementsByClassName("loading");
   var yearSelectorElement = document.getElementById("year-selector");
   var token = localStorage.getItem("access_token");
   var config2 = new SampleRankConfiguration();
@@ -13879,10 +13880,22 @@
     drawTopAlbumsBetween(plays, startTimeInclusive, endTimeExclusive);
   }
   var databaseHandler = new DatabaseHandler();
+  function hideLoadingElements() {
+    for (let i = 0; i < preUploadElements.length; i++) {
+      loadingElements[i].style.display = "none";
+    }
+  }
+  function hidePreUploadElements() {
+    for (let i = 0; i < preUploadElements.length; i++) {
+      preUploadElements[i].style.display = "none";
+    }
+  }
   databaseHandler.read().then((compressedPlays) => {
+    hideLoadingElements();
     if (compressedPlays) {
       setUpPostUploadUi(decompressPlays(compressedPlays));
     } else {
+      hidePreUploadElements();
       fileInput.addEventListener("change", async () => {
         const file = fileInput.files?.[0];
         if (file) {
@@ -13917,7 +13930,11 @@
         }
       });
     }
-  }).catch((reason) => alert(reason));
+  }).catch((reason) => {
+    hideLoadingElements();
+    alert(reason);
+    hidePreUploadElements();
+  });
   function setUpPostUploadUi(plays) {
     createYearRadioButtons(plays);
     selectYear(plays, plays[plays.length - 1].ts.getFullYear());
