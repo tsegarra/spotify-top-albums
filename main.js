@@ -13870,9 +13870,12 @@
       startTimeInclusive,
       endTimeExclusive
     );
-    getTopNAlbumsForDisplay(filteredPlays, 5).then(
-      (topNAlbums) => drawAlbumsToUi(topNAlbums)
-    );
+    alert(plays.length + " plays: filtering...");
+    getTopNAlbumsForDisplay(filteredPlays, 5).then((topNAlbums) => {
+      alert("draw to UI");
+      drawAlbumsToUi(topNAlbums);
+      alert("drawn");
+    });
   }
   function selectAllYears(plays) {
     const firstYearInclusive = plays[0].ts.getFullYear();
@@ -13903,8 +13906,11 @@
     listHeaderQualifierElement.textContent = " of " + monthName.charAt(0).toUpperCase() + monthName.slice(1) + " " + year;
   }
   function selectYear(plays, year) {
+    alert(year);
     const startTimeInclusive = new Date(year, 0, 1);
+    alert(startTimeInclusive);
     const endTimeExclusive = new Date(year + 1, 0, 1);
+    alert(endTimeExclusive);
     drawTopAlbumsBetween(plays, startTimeInclusive, endTimeExclusive);
     listHeaderQualifierElement.textContent = " of " + year;
   }
