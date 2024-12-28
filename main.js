@@ -13635,13 +13635,14 @@
     }
     getAlbumScore(a) {
       const numDistinctSongsPlayed = a.getNumDistinctSongsPlayed();
-      if (numDistinctSongsPlayed < 10) {
-        return a.getNumPlaysOfNthMostPlayedSong(numDistinctSongsPlayed);
+      if (numDistinctSongsPlayed < 6) {
+        return 0;
       }
-      return a.getNumPlaysOfNthMostPlayedSong(10);
+      const numPlaysOfNthMostPlayedSong = numDistinctSongsPlayed < 10 ? a.getNumPlaysOfNthMostPlayedSong(numDistinctSongsPlayed) : a.getNumPlaysOfNthMostPlayedSong(10);
+      return numPlaysOfNthMostPlayedSong > 1 ? numPlaysOfNthMostPlayedSong : 0;
     }
     includeAlbum(a) {
-      return a.getNumDistinctSongsPlayed() > 5;
+      return this.getAlbumScore(a) > 0;
     }
   };
 
