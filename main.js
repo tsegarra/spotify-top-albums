@@ -14066,7 +14066,11 @@
     }
   }
   function isTokenExpired() {
-    const expirationTime = parseInt(localStorage.getItem("token_expiration") || "0", 10);
+    const tokenExpirationFromLocalStorage = localStorage.getItem("token_expiration");
+    alert("tokenExpirationFromLocal: " + tokenExpirationFromLocalStorage);
+    const expirationTime = parseInt(tokenExpirationFromLocalStorage || "0", 10);
+    const expirationDate = new Date(expirationTime);
+    alert(expirationDate.toString());
     return Date.now() >= expirationTime;
   }
   function cacheImageUrlForTrack(trackId, imageUrl) {
