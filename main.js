@@ -14036,6 +14036,7 @@
       })
     };
     const body = await fetch("https://accounts.spotify.com/api/token", payload);
+    alert("response to token request: " + body.status);
     const response = await body.json();
     setTokenFromResponse(response);
   }
@@ -14083,9 +14084,7 @@
     return trackImageUrls[trackId] || null;
   }
   async function getImageUrlForTrack(trackId, token2) {
-    alert("get image URL for " + trackId);
     const cachedImageUrl = getImageUrlForTrackFromCache(trackId);
-    alert("from cache: " + (cachedImageUrl || "not found"));
     if (cachedImageUrl) {
       return cachedImageUrl;
     }
@@ -14097,7 +14096,6 @@
       }
     };
     const body = await fetch("https://api.spotify.com/v1/tracks/" + trackId, payload);
-    alert("spotify response " + body.status + ": " + body.statusText);
     const response = await body.json();
     const imageUrl = response.album.images[0].url;
     cacheImageUrlForTrack(trackId, imageUrl);
@@ -14108,14 +14106,18 @@
   var newTokenIsRequired = isTokenExpired() || !token;
   if (newTokenIsRequired) {
     if (refreshToken) {
+      alert("refreshing using refresh token");
       refreshUsingRefreshToken(refreshToken).then(() => {
         window.location.href = rootUri;
       });
     } else if (code && codeVerifierFromLocalStorage) {
+      alert("code found; getting a new token");
       getToken(code, codeVerifierFromLocalStorage).then(() => {
+        alert("token => then(); refreshing");
         window.location.href = rootUri;
       });
     } else {
+      alert("no code found. getting a code now.");
       const codeVerifier = generateRandomString();
       sha256(codeVerifier).then((d) => {
         const codeChallenge = base64encode(d);
