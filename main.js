@@ -14104,7 +14104,9 @@
     return trackImageUrls[trackId] || null;
   }
   async function getImageUrlForTrack(trackId, token2) {
+    alert("get image URL for " + trackId);
     const cachedImageUrl = getImageUrlForTrackFromCache(trackId);
+    alert("from cache: " + (cachedImageUrl || "not found"));
     if (cachedImageUrl) {
       return cachedImageUrl;
     }
@@ -14115,10 +14117,14 @@
         "Authorization": `Bearer ${token2}`
       }
     };
+    alert("calling out to spotify...");
     const body = await fetch("https://api.spotify.com/v1/tracks/" + trackId, payload);
+    alert("fetched from spotify.");
     const response = await body.json();
+    alert("got json");
     const imageUrl = response.album.images[0].url;
     cacheImageUrlForTrack(trackId, imageUrl);
+    alert("cached url.");
     return imageUrl;
   }
   var codeVerifierFromLocalStorage = localStorage.getItem("code_verifier");
