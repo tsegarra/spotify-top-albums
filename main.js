@@ -14100,6 +14100,7 @@
       }
     };
     const body = await fetch("https://api.spotify.com/v1/tracks/" + trackId, payload);
+    alert(body.text());
     const response = await body.json();
     const imageUrl = response.album.images[0].url;
     cacheImageUrlForTrack(trackId, imageUrl);
