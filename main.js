@@ -13870,11 +13870,8 @@
       startTimeInclusive,
       endTimeExclusive
     );
-    alert(plays.length + " plays: filtering...");
     getTopNAlbumsForDisplay(filteredPlays, 5).then((topNAlbums) => {
-      alert("draw to UI");
       drawAlbumsToUi(topNAlbums);
-      alert("drawn");
     });
   }
   function selectAllYears(plays) {
@@ -13906,11 +13903,8 @@
     listHeaderQualifierElement.textContent = " of " + monthName.charAt(0).toUpperCase() + monthName.slice(1) + " " + year;
   }
   function selectYear(plays, year) {
-    alert(year);
     const startTimeInclusive = new Date(year, 0, 1);
-    alert(startTimeInclusive);
     const endTimeExclusive = new Date(year + 1, 0, 1);
-    alert(endTimeExclusive);
     drawTopAlbumsBetween(plays, startTimeInclusive, endTimeExclusive);
     listHeaderQualifierElement.textContent = " of " + year;
   }
@@ -13925,19 +13919,12 @@
       preUploadElements[i].style.display = "block";
     }
   }
-  alert("page loaded");
   databaseHandler.read().then((compressedPlays) => {
-    alert("completed read from indexeddb");
     hideLoadingElements();
-    alert("hid loading dialog");
     if (compressedPlays && !reupload) {
-      alert("compressedPlays && !reupload");
       const decompressedPlays = decompressPlays(compressedPlays);
-      alert("decompressed");
       setUpPostUploadUi(decompressedPlays);
-      alert("ui configured");
     } else {
-      alert("previously uploaded file not found");
       showPreUploadElements();
       fileInput.addEventListener("change", async () => {
         const file = fileInput.files?.[0];
@@ -13956,19 +13943,15 @@
                 }
               }
             }
-            alert("writing to db");
             databaseHandler.write(
               compressPlays(plays),
               () => {
-                alert("wrote to db");
               },
               () => {
                 alert("Failed to save file.");
               }
             );
-            alert("setting up ui now");
             setUpPostUploadUi(plays);
-            alert("ui is ready");
           } catch (e2) {
             console.error(e2);
             alert("Invalid file format.");
@@ -13985,16 +13968,12 @@
   function updateSelectionFromUi(plays) {
     const selectedYear = parseInt(document.querySelector('input[name="year"]:checked').value);
     const selectedType = document.querySelector('input[name="type"]:checked').value;
-    alert("updating selection");
     if (selectedType === "month") {
-      alert("for month");
       const selectedMonthName = document.querySelector('input[name="month"]:checked').value;
       selectMonth(plays, selectedMonthName, selectedYear);
     } else if (selectedType === "year") {
-      alert("for year");
       selectYear(plays, selectedYear);
     } else {
-      alert("for all time");
       selectAllYears(plays);
     }
   }
@@ -14117,14 +14096,11 @@
         "Authorization": `Bearer ${token2}`
       }
     };
-    alert("calling out to spotify...");
     const body = await fetch("https://api.spotify.com/v1/tracks/" + trackId, payload);
-    alert("fetched from spotify.");
+    alert("spotify response " + body.status + ": " + body.statusText);
     const response = await body.json();
-    alert("got json");
     const imageUrl = response.album.images[0].url;
     cacheImageUrlForTrack(trackId, imageUrl);
-    alert("cached url.");
     return imageUrl;
   }
   var codeVerifierFromLocalStorage = localStorage.getItem("code_verifier");
