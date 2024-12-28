@@ -13919,11 +13919,19 @@
       preUploadElements[i].style.display = "block";
     }
   }
+  alert("page loaded");
   databaseHandler.read().then((compressedPlays) => {
+    alert("completed read from indexeddb");
     hideLoadingElements();
+    alert("hid loading dialog");
     if (compressedPlays && !reupload) {
-      setUpPostUploadUi(decompressPlays(compressedPlays));
+      alert("compressedPlays && !reupload");
+      const decompressedPlays = decompressPlays(compressedPlays);
+      alert("decompressed");
+      setUpPostUploadUi(decompressedPlays);
+      alert("ui configured");
     } else {
+      alert("previously uploaded file not found");
       showPreUploadElements();
       fileInput.addEventListener("change", async () => {
         const file = fileInput.files?.[0];
@@ -13942,15 +13950,19 @@
                 }
               }
             }
+            alert("writing to db");
             databaseHandler.write(
               compressPlays(plays),
               () => {
+                alert("wrote to db");
               },
               () => {
                 alert("Failed to save file.");
               }
             );
+            alert("setting up ui now");
             setUpPostUploadUi(plays);
+            alert("ui is ready");
           } catch (e2) {
             console.error(e2);
             alert("Invalid file format.");
