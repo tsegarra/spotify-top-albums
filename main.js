@@ -13979,12 +13979,16 @@
   function updateSelectionFromUi(plays) {
     const selectedYear = parseInt(document.querySelector('input[name="year"]:checked').value);
     const selectedType = document.querySelector('input[name="type"]:checked').value;
+    alert("updating selection");
     if (selectedType === "month") {
+      alert("for month");
       const selectedMonthName = document.querySelector('input[name="month"]:checked').value;
       selectMonth(plays, selectedMonthName, selectedYear);
     } else if (selectedType === "year") {
+      alert("for year");
       selectYear(plays, selectedYear);
     } else {
+      alert("for all time");
       selectAllYears(plays);
     }
   }
