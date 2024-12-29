@@ -14108,20 +14108,19 @@
     const expirationTime = parseInt(localStorage.getItem("token_expiration") || "0", 10);
     return Date.now() >= expirationTime;
   }
+  var STORAGE_KEY_TRACK_DATA = "albumDataByTrackId";
   function cacheDataForTrack(trackId, dataForTrack) {
-    const storedData = localStorage.getItem("trackData");
+    const storedData = localStorage.getItem(STORAGE_KEY_TRACK_DATA);
     const trackData = storedData ? JSON.parse(storedData) : {};
     trackData[trackId] = dataForTrack;
-    localStorage.setItem("trackData", JSON.stringify(trackData));
+    localStorage.setItem(STORAGE_KEY_TRACK_DATA, JSON.stringify(trackData));
   }
   function getTrackDataFromCache(trackId) {
-    const storedData = localStorage.getItem("trackData");
+    const storedData = localStorage.getItem(STORAGE_KEY_TRACK_DATA);
     if (!storedData) {
       return null;
     }
-    console.log(storedData);
     const trackData = JSON.parse(storedData);
-    console.log(trackData);
     return trackData[trackId] || null;
   }
   async function getDataForTrack(trackId, token2) {
