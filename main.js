@@ -14163,7 +14163,7 @@
       const codeVerifier = generateRandomString();
       sha256(codeVerifier).then((d) => {
         const codeChallenge = base64encode(d);
-        const scope = "user-read-private user-read-email";
+        const scope = "";
         const authUrl = new URL("https://accounts.spotify.com/authorize");
         window.localStorage.setItem("code_verifier", codeVerifier);
         const params = {
