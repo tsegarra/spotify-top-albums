@@ -9428,10 +9428,10 @@
 
   // src/AlbumForDisplay.ts
   var AlbumForDisplay = class {
-    constructor(albumTitle, artistTitle, imageUrl) {
+    constructor(albumTitle, artistTitle, spotifyAlbum) {
       this.albumTitle = albumTitle;
       this.artistName = artistTitle;
-      this.imageUrl = imageUrl;
+      this.spotifyAlbum = spotifyAlbum;
     }
   };
 
@@ -13702,6 +13702,22 @@
     }
   };
 
+  // src/SpotifyAlbum.ts
+  var SpotifyAlbum = class _SpotifyAlbum {
+    constructor(url, artUrl, totalTracks) {
+      this.url = url;
+      this.artUrl = artUrl;
+      this.totalTracks = totalTracks;
+    }
+    static fromApiResponse(response) {
+      return new _SpotifyAlbum(
+        response.album.external_urls.spotify,
+        response.album.images[0].url,
+        parseInt(response.album.total_tracks)
+      );
+    }
+  };
+
   // src/main.ts
   var fileInput = document.getElementById("file-input");
   var startInput = document.getElementById("startMonthIndex");
@@ -13804,16 +13820,20 @@
     });
     const promises = albumCollection.getAlbums().filter((a) => config2.includeAlbum(a)).sort((a, b) => config2.getAlbumScore(b) - config2.getAlbumScore(a)).slice(0, n).map(async (a) => {
       const arbitraryTrackId = a.getArbitraryTrackId();
-      let imageUrl;
+      let spotifyAlbum;
       if (arbitraryTrackId) {
-        imageUrl = await getImageUrlForTrack(arbitraryTrackId, token);
+        try {
+          spotifyAlbum = await getDataForTrack(arbitraryTrackId, token);
+        } catch (e2) {
+          spotifyAlbum = null;
+        }
       } else {
-        imageUrl = null;
+        spotifyAlbum = null;
       }
       return new AlbumForDisplay(
         a.albumName,
         a.artistName,
-        imageUrl
+        spotifyAlbum
       );
     });
     return Promise.all(promises);
@@ -13836,12 +13856,17 @@
       numberElement.className = "album-number";
       numberElement.textContent = (i++).toString();
       albumElement.appendChild(numberElement);
-      if (album.imageUrl) {
+      if (album.spotifyAlbum) {
+        const artLink = document.createElement("a");
+        artLink.href = album.spotifyAlbum.url;
+        artLink.target = "_blank";
+        artLink.className = "album-art-link";
         const artElement = document.createElement("img");
-        artElement.src = album.imageUrl;
+        artElement.src = album.spotifyAlbum.artUrl;
         artElement.alt = `Album art for ${album.albumTitle} by ${album.artistName}`;
         artElement.className = "album-art";
-        albumElement.appendChild(artElement);
+        artLink.appendChild(artElement);
+        albumElement.appendChild(artLink);
       }
       const albumLabelElement = document.createElement("div");
       albumLabelElement.className = "album-label";
@@ -13849,11 +13874,27 @@
       const albumNameElement = document.createElement("span");
       albumNameElement.textContent = album.albumTitle;
       albumNameElement.className = "album-title";
-      albumLabelElement.appendChild(albumNameElement);
+      if (album.spotifyAlbum) {
+        const albumNameLink = document.createElement("a");
+        albumNameLink.href = album.spotifyAlbum.url;
+        albumNameLink.target = "_blank";
+        albumNameLink.appendChild(albumNameElement);
+        albumLabelElement.appendChild(albumNameLink);
+      } else {
+        albumLabelElement.appendChild(albumNameElement);
+      }
       const artistNameElement = document.createElement("span");
       artistNameElement.textContent = album.artistName;
       artistNameElement.className = "artist-name";
-      albumLabelElement.appendChild(artistNameElement);
+      if (album.spotifyAlbum) {
+        const artistNameLink = document.createElement("a");
+        artistNameLink.href = album.spotifyAlbum.url;
+        artistNameLink.target = "_blank";
+        artistNameLink.appendChild(artistNameElement);
+        albumLabelElement.appendChild(artistNameLink);
+      } else {
+        albumLabelElement.appendChild(artistNameElement);
+      }
       listElement.appendChild(albumElement);
     });
   }
@@ -14067,24 +14108,24 @@
     const expirationTime = parseInt(localStorage.getItem("token_expiration") || "0", 10);
     return Date.now() >= expirationTime;
   }
-  function cacheImageUrlForTrack(trackId, imageUrl) {
+  function cacheDataForTrack(trackId, dataForTrack) {
     const storedData = localStorage.getItem("trackImageUrls");
-    const trackImageUrls = storedData ? JSON.parse(storedData) : {};
-    trackImageUrls[trackId] = imageUrl;
-    localStorage.setItem("trackImageUrls", JSON.stringify(trackImageUrls));
+    const trackData = storedData ? JSON.parse(storedData) : {};
+    trackData[trackId] = dataForTrack;
+    localStorage.setItem("trackData", JSON.stringify(trackData));
   }
-  function getImageUrlForTrackFromCache(trackId) {
-    const storedData = localStorage.getItem("trackImageUrls");
+  function getTrackDataFromCache(trackId) {
+    const storedData = localStorage.getItem("trackData");
     if (!storedData) {
       return null;
     }
-    const trackImageUrls = JSON.parse(storedData);
-    return trackImageUrls[trackId] || null;
+    const trackData = JSON.parse(storedData);
+    return trackData[trackId] || null;
   }
-  async function getImageUrlForTrack(trackId, token2) {
-    const cachedImageUrl = getImageUrlForTrackFromCache(trackId);
-    if (cachedImageUrl) {
-      return cachedImageUrl;
+  async function getDataForTrack(trackId, token2) {
+    const cachedData = getTrackDataFromCache(trackId);
+    if (cachedData) {
+      return cachedData;
     }
     const payload = {
       method: "GET",
@@ -14093,11 +14134,15 @@
         "Authorization": `Bearer ${token2}`
       }
     };
-    const body = await fetch("https://api.spotify.com/v1/tracks/" + trackId, payload);
-    const response = await body.json();
-    const imageUrl = response.album.images[0].url;
-    cacheImageUrlForTrack(trackId, imageUrl);
-    return imageUrl;
+    return new Promise(
+      (resolve, reject) => fetch("https://api.spotify.com/v1/tracks/" + trackId, payload).then((body) => {
+        body.json().then((response) => {
+          const album = SpotifyAlbum.fromApiResponse(response);
+          cacheDataForTrack(trackId, album);
+          resolve(album);
+        }).catch(() => reject());
+      }).catch(() => reject())
+    );
   }
   var codeVerifierFromLocalStorage = localStorage.getItem("code_verifier");
   var refreshToken = localStorage.getItem("refresh_token");
@@ -14105,6 +14150,9 @@
   if (newTokenIsRequired) {
     if (refreshToken) {
       refreshUsingRefreshToken(refreshToken).then(() => {
+        window.location.href = rootUri;
+      }).catch(() => {
+        localStorage.removeItem("refresh_token");
         window.location.href = rootUri;
       });
     } else if (code && codeVerifierFromLocalStorage) {

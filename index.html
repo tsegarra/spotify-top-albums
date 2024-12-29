@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Spotify Top Albums</title>
+  <title>Top Albums on Spotify</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
@@ -20,7 +20,7 @@
     body {
       font-family: "Roboto", sans-serif;
       /*background-color: #f675c2;*/
-      background-color:#191919;
+      background-color:#121212;
       color: white;
       display: flex;
       justify-content: center;
@@ -95,10 +95,21 @@
       gap: 0.75rem;
     }
 
-    img.album-art {
-      flex-shrink: 1;
+    .album-label > a {
+      font-size: 0;
+      color: white !important;
+      text-decoration: none;
+    }
+
+    .album-art-link {
+      flex-shrink: 0;
       width: 20%;
       max-width: 300px;
+    }
+
+    img.album-art {
+      border-radius: 2px;
+      width: 100%;
     }
 
     .album-label {
@@ -163,7 +174,7 @@
     }
 
     fieldset.selector input[type="radio"]:checked + label {
-      background-color: #13d660;
+      background-color: #1ed760;
       color: black;
     }
 
@@ -184,6 +195,23 @@
     p.no-albums-found-message {
       margin: 0;
       font-size: 12px;
+    }
+
+    footer img {
+      width: 20%;
+      max-width: 300px;
+    }
+
+    footer.post-upload {
+      margin-top: 3rem;
+    }
+
+    .footer-contents {
+      display: flex;
+      gap: 4px;
+      font-size: 12px;
+      align-items: center;
+      justify-content: end;
     }
   </style>
 </head>
@@ -231,7 +259,12 @@
   </div>
 
   <div class="post-upload" id="album-list"></div>
+  <footer class="post-upload">
+    <div class="footer-contents">
+      <span>Album artwork provided by</span> <img src="spotify_logo.png" alt="Spotify" />
+    </div>
+  </footer>
   <script src="zip.min.js"></script>
-  <script src="main.js?v=1735432261957" defer></script>
+  <script src="main.js?v=1735455605136" defer></script>
 </body>
 </html>
