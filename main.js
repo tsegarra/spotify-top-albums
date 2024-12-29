@@ -14119,7 +14119,9 @@
     if (!storedData) {
       return null;
     }
+    console.log(storedData);
     const trackData = JSON.parse(storedData);
+    console.log(trackData);
     return trackData[trackId] || null;
   }
   async function getDataForTrack(trackId, token2) {
