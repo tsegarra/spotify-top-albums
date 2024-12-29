@@ -13870,9 +13870,9 @@
       startTimeInclusive,
       endTimeExclusive
     );
-    getTopNAlbumsForDisplay(filteredPlays, 5).then((topNAlbums) => {
-      drawAlbumsToUi(topNAlbums);
-    });
+    getTopNAlbumsForDisplay(filteredPlays, 5).then(
+      (topNAlbums) => drawAlbumsToUi(topNAlbums)
+    );
   }
   function selectAllYears(plays) {
     const firstYearInclusive = plays[0].ts.getFullYear();
@@ -13922,8 +13922,7 @@
   databaseHandler.read().then((compressedPlays) => {
     hideLoadingElements();
     if (compressedPlays && !reupload) {
-      const decompressedPlays = decompressPlays(compressedPlays);
-      setUpPostUploadUi(decompressedPlays);
+      setUpPostUploadUi(decompressPlays(compressedPlays));
     } else {
       showPreUploadElements();
       fileInput.addEventListener("change", async () => {
@@ -14036,7 +14035,6 @@
       })
     };
     const body = await fetch("https://accounts.spotify.com/api/token", payload);
-    alert("response to token request: " + body.status);
     const response = await body.json();
     setTokenFromResponse(response);
   }
@@ -14066,11 +14064,7 @@
     }
   }
   function isTokenExpired() {
-    const tokenExpirationFromLocalStorage = localStorage.getItem("token_expiration");
-    alert("tokenExpirationFromLocal: " + tokenExpirationFromLocalStorage);
-    const expirationTime = parseInt(tokenExpirationFromLocalStorage || "0", 10);
-    const expirationDate = new Date(expirationTime);
-    alert(expirationDate.toString());
+    const expirationTime = parseInt(localStorage.getItem("token_expiration") || "0", 10);
     return Date.now() >= expirationTime;
   }
   function cacheImageUrlForTrack(trackId, imageUrl) {
@@ -14100,9 +14094,7 @@
       }
     };
     const body = await fetch("https://api.spotify.com/v1/tracks/" + trackId, payload);
-    body.text().then((s) => alert(s)).catch((e2) => alert(e2));
     const response = await body.json();
-    alert(response);
     const imageUrl = response.album.images[0].url;
     cacheImageUrlForTrack(trackId, imageUrl);
     return imageUrl;
@@ -14112,18 +14104,14 @@
   var newTokenIsRequired = isTokenExpired() || !token;
   if (newTokenIsRequired) {
     if (refreshToken) {
-      alert("refreshing using refresh token");
       refreshUsingRefreshToken(refreshToken).then(() => {
         window.location.href = rootUri;
       });
     } else if (code && codeVerifierFromLocalStorage) {
-      alert("code found; getting a new token");
       getToken(code, codeVerifierFromLocalStorage).then(() => {
-        alert("token => then(); refreshing");
         window.location.href = rootUri;
       });
     } else {
-      alert("no code found. getting a code now.");
       const codeVerifier = generateRandomString();
       sha256(codeVerifier).then((d) => {
         const codeChallenge = base64encode(d);
