@@ -14109,7 +14109,7 @@
     return Date.now() >= expirationTime;
   }
   function cacheDataForTrack(trackId, dataForTrack) {
-    const storedData = localStorage.getItem("trackImageUrls");
+    const storedData = localStorage.getItem("trackData");
     const trackData = storedData ? JSON.parse(storedData) : {};
     trackData[trackId] = dataForTrack;
     localStorage.setItem("trackData", JSON.stringify(trackData));
