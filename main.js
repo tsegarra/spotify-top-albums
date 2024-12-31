@@ -13994,7 +13994,7 @@
             setUpPostUploadUi(plays);
           } catch (e2) {
             console.error(e2);
-            alert("Invalid file format.");
+            alert(e2);
           }
           await zipReader.close();
         }
